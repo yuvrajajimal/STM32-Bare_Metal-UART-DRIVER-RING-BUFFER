@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// Ring buffer : Power of 2 to wrap index while avoiding % operator
+#define RX_SIZE 128
+#define RX_MASK (RX_SIZE - 1)
+
+bool UART2_ReadByte(uint8_t *out); // False if nothing waiting
+
 // Onboard LED (LD2), PA5
 void LED_Init(void); // Clock + PA5 to output
 void LED_On(void);
@@ -17,5 +23,9 @@ void UART2_SendString(const char *s);
 void UART2_SendUInt(uint32_t n);
 
 bool UART2_TakeByte(uint8_t *out);
+
+// Error counters
+uint32_t UART2_Dropped(void); // bytes lost due to full buffer, main too slow
+uint32_t UART2_Overruns(void); // bytes lost in hardware, ISR too slow
 
 #endif

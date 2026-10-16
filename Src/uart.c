@@ -3,8 +3,16 @@
 #define APB1_CLK 16000000UL // Default HSI clock
 #define BAUD     115200UL
 
-static volatile uint8_t last_byte;
-static volatile bool got_byte;
+#ifndef USART_SR_ORE
+#define USART_SR_ORE (1U << 3)
+#endif
+
+static volatile uint32_t dropped;
+static volatile uint32_t overruns;
+
+static volatile uint8_t rx_buf[RX_SIZE];
+static volatile uint8_t rx_head; // Where ISR writes next
+static volatile uint8_t rx_tail; // Where mai reads next
 
 void LED_Init(void)
 {
@@ -25,19 +33,43 @@ void LED_Off(void)
 
 void USART2_IRQHandler(void)
 {
-	if (USART2->SR & USART_SR_RXNE)
+	uint32_t sr = USART2->SR; // Single snapshot
+
+	if (!(sr & (USART_SR_RXNE | USART_SR_ORE))) // Byte received or overrun
+		return;
+
+	uint8_t b = (uint8_t)USART2->DR; // Read once
+
+	if (sr & USART_SR_ORE) // Overrun
+		overruns++;
+
+	if (sr & USART_SR_RXNE)
 	{
-		last_byte = (uint8_t)USART2->DR;
-		got_byte = true;
+		uint16_t next = (rx_head + 1) & RX_MASK; // Wrap 127 to 0
+
+		if (next == rx_tail) // full buffer
+		{
+			dropped++;
+		}
+		else
+		{
+			// Store byte, advance head
+			rx_buf[rx_head] = b;
+			rx_head = next;
+		}
 	}
 }
 
-bool UART2_TakeByte(uint8_t *out)
+uint32_t UART2_Dropped(void){ return dropped;	}
+uint32_t UART2_Overruns(void) { return overruns;  }
+
+bool UART2_ReadByte(uint8_t *out)
 {
-	if (!got_byte)
+	if (rx_head == rx_tail) // Empty buffer
 		return false;
-	*out = last_byte;
-	got_byte = false;
+	// Copy byte, advance
+	*out = rx_buf[rx_tail];
+	rx_tail = (rx_tail + 1) & RX_MASK;
 	return true;
 }
 
