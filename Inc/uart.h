@@ -16,4 +16,6 @@ void UART2_SendChar(char c);
 void UART2_SendString(const char *s);
 void UART2_SendUInt(uint32_t n);
 
+bool UART2_TakeByte(uint8_t *out);
+
 #endif

@@ -2,17 +2,15 @@
 
 int main(void)
 {
+	uint8_t c;
+
 	LED_Init();
 	UART2_Init();
-
-	uint32_t count = 0;
+	UART2_SendString("Type Something\r\n");
 
     while (1)
     {
-    	// For Testing
-    	UART2_SendString("count: ");
-    	UART2_SendUInt(count++);
-    	UART2_SendString("\r\n");
-    	for (volatile uint32_t i = 0; i < 500000; i ++){} // Crude delay
+    	if (UART2_TakeByte(&c))
+    		UART2_SendChar((char)c);
     }
 }
