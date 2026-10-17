@@ -19,7 +19,7 @@ void LED_Off(void);
 // USART2 PA2 (TX) and PA3 (RX)
 void UART2_Init(void);
 void UART2_SendChar(char c);
-void UART2_SendString(const char *s);
+void UART2_SendString(const char *s); // number as text
 void UART2_SendUInt(uint32_t n);
 
 bool UART2_TakeByte(uint8_t *out);
